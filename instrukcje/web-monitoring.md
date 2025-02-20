@@ -11,7 +11,10 @@
     su -s /bin/bash - container
     podman run --name browser -p 4444:4444 -p 7900:7900 --shm-size="2g" -d selenium/standalone-chrome:latest
     podman generate systemd --new --name browser -f
+    mkdir /home/container/.config/systemd/user/
     mv -v container-browser.service ~/.config/systemd/user/
+    exit
+    su - container
     systemctl --user daemon-reload
     systemctl --user enable container-browser.service
     systemctl --user enable podman-restart.service
