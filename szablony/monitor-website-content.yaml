@@ -1,0 +1,38 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: fb59e3e8804b420596d5691c8b9e115f
+      name: Komputertech
+  templates:
+    - uuid: 32ac68123e884993973bba9d0d50a40b
+      template: 'Monitor website content'
+      name: 'Monitor website content'
+      groups:
+        - name: Komputertech
+      items:
+        - uuid: afebe26f228e48c6b81386b38e3d45d0
+          name: 'Website content'
+          key: 'web.page.get[{$WEB.MONITOR.CONTENT.URL}]'
+          delay: 3m
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '{$WEB.MONITOR.CONTENT.REGEX}'
+                - '{$WEB.MONITOR.CONTENT.REGEX.GROUP}'
+          triggers:
+            - uuid: 816886aaf2d3494282cea19f1eb7cda1
+              expression: 'last(/Monitor website content/web.page.get[{$WEB.MONITOR.CONTENT.URL}])<>"error"'
+              name: 'Webpage works!'
+              priority: INFO
+      macros:
+        - macro: '{$WEB.MONITOR.CONTENT.REGEX}'
+          value: none
+          description: 'Search for selected text'
+        - macro: '{$WEB.MONITOR.CONTENT.REGEX.GROUP}'
+          value: \1
+          description: 'Select regex group'
+        - macro: '{$WEB.MONITOR.CONTENT.URL}'
+          value: none
+          description: 'URL to monitored site'

@@ -1,0 +1,334 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 0563b1e4e1c44edc9d35e8a0c85e7e77
+      name: Komputertech
+  templates:
+    - uuid: a1094d458a3e40019582b070e62dc5d2
+      template: 'WSUS template'
+      name: 'WSUS template'
+      groups:
+        - name: Komputertech
+      items:
+        - uuid: 3a9540b9f8444baab03f04d85b497911
+          name: 'Certificate valid days'
+          type: DEPENDENT
+          key: CertificateValidDays
+          delay: '0'
+          history: 90d
+          units: days
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.CertificateValidDays
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: cca57ae2796b42e48a698bf1e03defbd
+          name: 'Certificate valid until'
+          type: DEPENDENT
+          key: CertificateValidUntil
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.CertificateValidUntil
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 105c21d6386949b6b0c156a455d5d588
+          name: 'Last synchronization'
+          type: DEPENDENT
+          key: LastSynchronization
+          delay: '0'
+          history: 90d
+          valuemap:
+            name: 'Synchronization status'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.LastSynchronization
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+          triggers:
+            - uuid: 091042a2399a4a6592607d9d4344edcb
+              expression: 'last(/WSUS template/LastSynchronization)<>1'
+              name: 'Synchronization failed'
+              priority: AVERAGE
+        - uuid: f2485aaa78a14008bbd34aebb4c004ee
+          name: 'Servers list to update'
+          type: DEPENDENT
+          key: ListServersToUpdate
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ListServersToUpdate
+            - type: TRIM
+              parameters:
+                - '{"}]'
+            - type: STR_REPLACE
+              parameters:
+                - '":["'
+                - '<br>&emsp;'
+            - type: STR_REPLACE
+              parameters:
+                - '","'
+                - '&emsp;<br>&emsp;'
+            - type: STR_REPLACE
+              parameters:
+                - '"],"'
+                - '<br>'
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+          tags:
+            - tag: newupdates
+              value: windows
+        - uuid: 23bf1f98a00b479d8cb9e34e446e3025
+          name: 'Computers in WSUS'
+          type: DEPENDENT
+          key: NumberComputers
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberComputers
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 19400b54fdbd49d8b739493620ed096c
+          name: 'Computers to update'
+          type: DEPENDENT
+          key: NumberComputersToUpdate
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberComputersToUpdate
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 3bcee575170a4f8192059df44e495bf6
+          name: 'Computers not reported'
+          type: DEPENDENT
+          key: NumberOldComputers
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberOldComputers
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 0484799974b843a695e92a882449c077
+          name: 'Servers not reported'
+          type: DEPENDENT
+          key: NumberOldServers
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberOldServers
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 0155410afbe04b08b03e57fea4953242
+          name: 'Servers in WSUS'
+          type: DEPENDENT
+          key: NumberServers
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberServers
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 3d8233b7cb58480fb99c73b58dd308c8
+          name: 'Servers to update'
+          type: DEPENDENT
+          key: NumberServersToUpdate
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberServersToUpdate
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+          triggers:
+            - uuid: fcbb52ef46474833acd6bf4e9561159e
+              expression: 'last(/WSUS template/NumberServersToUpdate)<>0'
+              name: 'New updates for servers'
+              priority: INFO
+        - uuid: 35471563c0514cdb8418ed99875b3d7a
+          name: 'Number of updates'
+          type: DEPENDENT
+          key: NumberUpdates
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.NumberUpdates
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 12d1ec91f6fe49f4b5fa8c10eac4d43d
+          name: 'Port 8530'
+          type: DEPENDENT
+          key: Port8530
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.Port8530
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 546430b43a58409fae323a0a4119cd8d
+          name: 'Port 8531'
+          type: DEPENDENT
+          key: Port8531
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.Port8531
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+          triggers:
+            - uuid: c9b96dadf38740d2ad12794ab16462df
+              expression: 'last(/WSUS template/Port8531)<>"Open"'
+              name: 'Communication port is closed'
+              priority: HIGH
+        - uuid: 763bc510e75c4f7494e1414a39f7e5ae
+          name: 'Service IIS state'
+          type: DEPENDENT
+          key: ServiceIISstate
+          delay: '0'
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ServiceIISstate
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 9cdcfd5118c1423d8cfb28bcd72777ec
+          name: 'Service WID state'
+          type: DEPENDENT
+          key: ServiceWIDstate
+          delay: '0'
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ServiceWIDstate
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: cbdb92a3a7a541b484dcb9abdcaee9ed
+          name: 'Service WSUS state'
+          type: DEPENDENT
+          key: ServiceWSUSstate
+          delay: '0'
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ServiceWSUSstate
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: e37de98ef33e4426a41cd871f3c5bb6e
+          name: 'Size SUSDB'
+          type: DEPENDENT
+          key: SizeSUSDB
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: mb
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.SizeSUSDB
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 4aed090f70684cfda78900e0a6fbb61d
+          name: 'Size SUSDB_LOG'
+          type: DEPENDENT
+          key: SizeSUSDB_LOG
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: mb
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.SizeSUSDB_LOG
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+        - uuid: 8daf6a510b96471598dea40feaba439b
+          name: 'Database state'
+          type: DEPENDENT
+          key: SUSDBstate
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.SUSDBstate
+          master_item:
+            key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+          triggers:
+            - uuid: cb84431fec65496180eb9052e5f42e65
+              expression: 'last(/WSUS template/SUSDBstate)<>"ONLINE"'
+              name: 'Database not working'
+              opdata: '{ITEM.LASTVALUE1}'
+              priority: DISASTER
+        - uuid: be8ca9d9e91a4018b6f50e3c81e710ee
+          name: 'WSUS data'
+          key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent\wsus-dane.ps1"]'
+          delay: 15m
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+      valuemaps:
+        - uuid: 95a97d8be2e348959e7f07210b93ddb6
+          name: 'Service state'
+          mappings:
+            - value: '1'
+              newvalue: Stopped
+            - value: '2'
+              newvalue: 'Start pending'
+            - value: '3'
+              newvalue: 'Stop pending'
+            - value: '4'
+              newvalue: Running
+            - value: '5'
+              newvalue: 'Continue pending'
+            - value: '6'
+              newvalue: 'Pause pending'
+            - value: '7'
+              newvalue: Paused
+        - uuid: d40989ec1437473e963a88912aff09e8
+          name: 'Synchronization status'
+          mappings:
+            - value: '0'
+              newvalue: Failed
+            - value: '1'
+              newvalue: Succeded
