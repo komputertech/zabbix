@@ -7,8 +7,7 @@ $dateExpireWarning = ($dateCurrent.AddDays($daysToCheck)).ToString("MM/dd/yyyy H
 $users = @()
 
 Get-ADUser -Filter * -SearchBase $ou -Properties "UserPrincipalName", "pwdLastSet", "userAccountControl" | ForEach-Object {
-    # band 2 disabled, 65536 not expired
-    if(-not ([int]$_.userAccountControl -band 2 -or ([int]$_.userAccountControl -band 65536))){
+    if([int]$_.userAccountControl -eq 512){
         $userPasswordLastSet = $_.pwdLastSet
         $userPasswordExpireDate = ([datetime]::FromFileTime($userPasswordLastSet)).AddDays($daysPasswordIsValid)
         $userPasswordExpireDays = ($userPasswordExpireDate - $dateCurrent).Days
