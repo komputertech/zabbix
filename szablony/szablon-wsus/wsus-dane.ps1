@@ -40,7 +40,7 @@ function Test-Port($port) {
 
 function Get-Certificate($cert_name) {
     $check_result = @{}
-    $check_result["expiration_date"] = (Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object { $_.Thumbprint -eq $cert_name }).NotAfter
+    $check_result["expiration_date"] = (Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object { $_.DnsName -eq $cert_name }).NotAfter
     $check_result["days_to_expire"] = (New-TimeSpan -Start (Get-Date) -End $check_result["expiration_date"]).Days
     $check_result["expiration_date"] = $check_result["expiration_date"].ToString("dd-MM-yyyy")
     return $check_result
@@ -99,7 +99,7 @@ $wsus_server_name = "wsus.mycompany.local"
 $computer_group = "WindowsPC"
 $server_group = "WindowsServers"
 $information_susdb = Get-Susdb-Information
-$check_certificate = Get-Certificate("234b999c943453f2cb74e99957852fda3db884f6")
+$check_certificate = Get-Certificate($wsus_server_name)
 $report_computers = Get-Computers-AllAndOld($computer_group)
 $report_servers = Get-Computers-AllAndOld($server_group)
 

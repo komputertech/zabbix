@@ -1,0 +1,26 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 0563b1e4e1c44edc9d35e8a0c85e7e77
+      name: Komputertech
+  templates:
+    - uuid: da0189a80cfa46d49fd763b0f770a8f4
+      template: 'AD check'
+      name: 'AD check'
+      groups:
+        - name: Komputertech
+      items:
+        - uuid: c2eb9ae311b148a3bb116f923a5d7349
+          name: 'Users check cert'
+          key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent2\check-users-certificate.ps1"]'
+          delay: 0;h6
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+        - uuid: 2a70df78f0d54ea1a6d695f0a94e7904
+          name: 'Users check pass'
+          key: 'system.run[powershell.exe -noprofile -nologo -file "C:\Program Files\Zabbix Agent2\check-users-password.ps1"]'
+          delay: 0;h6
+          history: 7d
+          value_type: TEXT
+          trends: '0'
