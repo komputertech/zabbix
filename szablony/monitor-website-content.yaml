@@ -20,19 +20,19 @@ zabbix_export:
             - type: REGEX
               parameters:
                 - '{$WEB.MONITOR.CONTENT.REGEX}'
-                - '{$WEB.MONITOR.CONTENT.REGEX.GROUP}'
+                - '{$WEB.MONITOR.CONTENT.REGEX.WANTED}'
           triggers:
             - uuid: 816886aaf2d3494282cea19f1eb7cda1
-              expression: 'last(/Monitor website content/web.page.get[{$WEB.MONITOR.CONTENT.URL}])<>"error"'
+              expression: Expression: `last(/Monitor website content/web.page.get[{$WEB.MONITOR.CONTENT.URL}])<>"{$WEB.MONITOR.CONTENT.WANTED}"`
               name: 'Webpage works!'
               priority: INFO
       macros:
         - macro: '{$WEB.MONITOR.CONTENT.REGEX}'
           value: none
           description: 'Search for selected text'
-        - macro: '{$WEB.MONITOR.CONTENT.REGEX.GROUP}'
-          value: \1
-          description: 'Select regex group'
         - macro: '{$WEB.MONITOR.CONTENT.URL}'
           value: none
           description: 'URL to monitored site'
+        - macro: '{$WEB.MONITOR.CONTENT.WANTED}'
+          value: none
+          description: 'What you expected to see'
