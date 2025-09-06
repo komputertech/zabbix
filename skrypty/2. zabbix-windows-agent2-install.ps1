@@ -40,10 +40,13 @@ if (Test-Path -Path $InstallerOutput -PathType Leaf) {
 Write-Host "Copy configuration file"
 @('C:\Program Files\Zabbix Agent 2\zabbix_agent2.conf', 'C:\Program Files\Zabbix Agent\zabbix_agentd.conf') | ForEach-Object {
     if (Test-Path -Path $_ -PathType Leaf) {
-        if ($_ -match '\\([^\\]+)$') {
-            Copy-Item -Path $_ -Destination ($UserDownloadFolder + '\' + $matches[1] + '.old')
-            Write-Host "Configuration file saved" -ForegroundColor Green
+        $fileName = Split-Path -Path $_ -Leaf
+        if (Test-Path -Path (Join-Path -Path $UserDownloadFolder -ChildPath ($fileName + '.old')) -PathType Leaf) {
+            Write-Host "Backup exist, remove it first" -ForegroundColor Red
+            exit(0)
         }
+        Copy-Item -Path $_ -Destination (Join-Path -Path $UserDownloadFolder -ChildPath ($fileName + '.old'))
+        Write-Host "Configuration file saved" -ForegroundColor Green
     } else {
         Write-Host "Configuration file not found"
     }
