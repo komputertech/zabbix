@@ -1,0 +1,174 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: e0cecea5dc5d40948b41fd606a51d97b
+      name: CUSTOM
+  templates:
+    - uuid: 896064dc17e24d5882747852d2c830ca
+      template: 'Zabbix version check'
+      name: 'Zabbix version check'
+      description: |
+        Before adding this template, remove the built-in Zabbix server version and Zabbix proxy version items from the host.
+                
+        The "Zabbix server version" item can be used to build a "History widget" that supports multiple servers and includes HTML-based color styling.
+      groups:
+        - name: CUSTOM
+      items:
+        - uuid: fbdf684863a344b885b0b02712cfca4e
+          name: 'Zabbix server version check convert'
+          type: CALCULATED
+          key: zabbix.ver.check.convert
+          value_type: TEXT
+          trends: '0'
+          params: 'concat(last(//zabbix.ver.latest.check),";",last(//zabbix.ver.local.series))'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '\{\s*"version":\s*"(\d+\.\d+)"[\s\S]*?\}[\s\S]*?\}(?=[\s\S]*\1\s*$)'
+                - \0
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 09a15aa845a3414caa57cfedb89895c0
+          name: 'Zabbix server version information'
+          type: CALCULATED
+          key: zabbix.ver.information
+          value_type: CHAR
+          trends: '0'
+          params: 'concat(last(//zabbix[version]), ";", last(//zabbix.ver.local.branch), ";", last(//zabbix.ver.support), ";", last(//zabbix.ver.latest.release), ";", last(//zabbix.ver.latest.date))'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  const zloc = value.split(";")[0];
+                  const zbra = value.split(";")[1];
+                  const zsup = value.split(";")[2];
+                  const znew = value.split(";")[3];
+                  const zdat = value.split(";")[4];
+                  var zout = "";
+                  if(zsup==="false"){
+                  		if(zloc===znew){
+                  			zout = "<p>Zabbix " + zloc + " (" + zbra + "), released on " + zdat + " is up to date.</p>";
+                  		} else {
+                  			zout = "<p style=\"color: orange;\">Zabbix " + zloc + " (" + zbra + ") should be updated to " + znew + " (" + zdat + ").</p>";
+                  		}
+                  } else {
+                  	zout = "<p style=\"color: red;\">Zabbix " + zloc + " (" + zbra + ")" + " is unsupported.</p>";
+                  }
+                  return zout;
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+        - uuid: 7aa4ba602b8f411aa1fb5f9006593e7a
+          name: 'Zabbix server version latest check'
+          type: HTTP_AGENT
+          key: zabbix.ver.latest.check
+          delay: 4h
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          url: 'https://services.zabbix.com/updates/v1'
+          follow_redirects: 'NO'
+        - uuid: 2c6cbb52c39b437dab0f149c41c9d808
+          name: 'Zabbix server version latest date'
+          type: DEPENDENT
+          key: zabbix.ver.latest.date
+          delay: '0'
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.latest_release.created
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  const fulldate = new Date(parseInt(value)*1000);
+                  return fulldate.toISOString().split('T')[0];
+          master_item:
+            key: zabbix.ver.check.convert
+        - uuid: 2ca0aa32106f473fb3fbe759a1e2a316
+          name: 'Zabbix server version latest release'
+          type: DEPENDENT
+          key: zabbix.ver.latest.release
+          delay: '0'
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.latest_release.release
+          master_item:
+            key: zabbix.ver.check.convert
+        - uuid: e8b54e38cada4f19977dc97608cab950
+          name: 'Zabbix server version branch'
+          type: DEPENDENT
+          key: zabbix.ver.local.branch
+          delay: '0'
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  if(value.split(".")[1]==="0"){
+                  	return "stable";
+                  } else{
+                  	return "current";
+                  }
+          master_item:
+            key: zabbix.ver.local.series
+        - uuid: 4deb7ddd51ac4359840a4e85bd1d9e60
+          name: 'Zabbix server version series'
+          type: DEPENDENT
+          key: zabbix.ver.local.series
+          delay: '0'
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - \d+.\d+
+                - \0
+          master_item:
+            key: 'zabbix[version]'
+        - uuid: 497cb5bb41db4705859b1a5cc887ccd3
+          name: 'Zabbix server version end of support'
+          type: DEPENDENT
+          key: zabbix.ver.support
+          delay: '0'
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.end_of_full_support
+          master_item:
+            key: zabbix.ver.check.convert
+          triggers:
+            - uuid: 042afba3c6f54adb99137752e03c33a4
+              expression: 'last(/Zabbix version check/zabbix.ver.support)="true"'
+              name: 'Zabbix server version not supported'
+              opdata: 'Upgrade to supported version.'
+              priority: HIGH
+        - uuid: 917a5f1aadc24190bb4629a9be2a1c0b
+          name: 'Zabbix server version'
+          type: INTERNAL
+          key: 'zabbix[version]'
+          value_type: CHAR
+          trends: '0'
+          triggers:
+            - uuid: 7693880e5adb46b191bf1940d02d11cc
+              expression: 'change(/Zabbix version check/zabbix[version])=1'
+              name: 'Zabbix server version change'
+              opdata: 'New version {ITEM.LASTVALUE1} - acknowledge to close.'
+              priority: INFO
+  triggers:
+    - uuid: 89ad8f00079c48c98160239227c575b6
+      expression: '(last(/Zabbix version check/zabbix[version])<>last(/Zabbix version check/zabbix.ver.latest.release)) and (last(/Zabbix version check/zabbix.ver.latest.date)<>"")'
+      name: 'Zabbix server version new release'
+      opdata: 'Installed version {ITEM.LASTVALUE1}, new version  {ITEM.LASTVALUE2} ({ITEM.LASTVALUE3}).'
+      priority: WARNING
