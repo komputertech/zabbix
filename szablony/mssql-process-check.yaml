@@ -1,0 +1,101 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 71a7ec8cfd3f47de875b3719b33886f8
+      name: CUSTOM
+  templates:
+    - uuid: d2a3fe3caa604739a8dff91bad18f692
+      template: 'MSSQL processes check'
+      name: 'MSSQL processes check'
+      groups:
+        - name: CUSTOM
+      items:
+        - uuid: e55977fc3bbd46aeb670bb1d8332c51d
+          name: 'Check processes'
+          type: ODBC
+          key: 'db.odbc.get[get_processes,{$MSSQL.DSN},]'
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          params: |
+            SELECT 
+                r.session_id,
+                s.login_name,
+                s.host_name,
+                DB_NAME(r.database_id) AS database_name,
+                r.status,
+                r.command,
+                r.cpu_time,
+                r.total_elapsed_time,
+                r.reads,
+                r.writes,
+                r.logical_reads,
+                r.wait_type,
+                r.wait_time,
+                r.wait_resource
+            FROM sys.dm_exec_requests r
+            JOIN sys.dm_exec_sessions s
+                ON r.session_id = s.session_id
+            WHERE 
+                s.is_user_process = 1
+            ORDER BY 
+                r.wait_time DESC;
+          username: '{$MSSQL.USER}'
+          password: '{$MSSQL.PASSWORD}'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var jsonData = JSON.parse(value);
+                  var waitTimeAlarm = 300000;
+                  var tableHtml = '<table border="1">';
+                  tableHtml += '<thead>
+                  const part1 = '<thead><tr><th>Session ID</th><th>Login name</th><th>Host name</th><th>Database name</th><th>Status</th>';
+                  const part2 = '<th>Command</th><th>CPU time</th><th>Total elapsed time</th><th>Reads</th><th>Writes</th>';
+                  const part3 = '<th>logical reads</th><th>Wait type</th><th>Wait time</th><th>Wait resource</th></tr></thead><tbody>';
+                  tableHtml = tableHtml + part1 + part2 + part3;
+                  
+                  for(var i = 0; i < Object.keys(jsonData).length; i++){
+                  	tableHtml += '<tr>';
+                  	tableHtml += '<td>' + (jsonData[i].session_id != null ? jsonData[i].session_id : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].login_name != null ? jsonData[i].login_name : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].host_name != null ? jsonData[i].host_name : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].database_name != null ? jsonData[i].database_name : 'null') + '</td>';
+                  	
+                  	var statusState = (jsonData[i].status != null ? jsonData[i].status : 'null');
+                  	var statusColour = '';
+                  	if (statusState != null){
+                  		if (statusState === 'running' || statusState === 'succeeded') {
+                  			statusColour = ' style="background-color: #429e42;"'; // green
+                  		} else if (statusState = 'idle' || statusState === 'retry'){
+                  			statusColour = ' style="background-color: #d9b823;"'; // yellow
+                  		} else {
+                  			statusColour = ' style="background-color: #d92323;"'; // red
+                  		}
+                  	}
+                  	tableHtml += '<td' + statusColour + '>' + (statusState != null ? statusState : 'null') + '</td>';
+                  	
+                  	tableHtml += '<td>' + (jsonData[i].command != null ? jsonData[i].command : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].cpu_time != null ? jsonData[i].cpu_time : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].total_elapsed_time != null ? jsonData[i].total_elapsed_time : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].reads != null ? jsonData[i].reads : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].writes != null ? jsonData[i].writes : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].logical_reads != null ? jsonData[i].logical_reads : 'null') + '</td>';
+                  	tableHtml += '<td>' + (jsonData[i].wait_type != null ? jsonData[i].wait_type : 'null') + '</td>';
+                  	
+                  	var waitTimeStatus = (jsonData[i].wait_time != null ? jsonData[i].wait_time : 'null');
+                  	var statusColour = '';
+                  	if (waitTimeStatus != null){
+                  		if (waitTimeStatus < waitTimeAlarm) {
+                  			statusColour = ' style="background-color: #429e42;"'; // green
+                  		} else {
+                  			statusColour = ' style="background-color: #d92323;"'; // red
+                  		}
+                  	}
+                  	tableHtml += '<td' + statusColour + '>' + (waitTimeStatus != null ? waitTimeStatus : 'null') + '</td>';
+                  	
+                  	tableHtml += '<td>' + (jsonData[i].wait_resource != null ? jsonData[i].wait_resource : 'null') + '</td>';
+                  	tableHtml += '</tr>';
+                  }
+                  tableHtml += '</tbody></table>';
+                  return tableHtml;

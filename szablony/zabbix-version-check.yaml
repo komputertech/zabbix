@@ -2,7 +2,7 @@ zabbix_export:
   version: '7.0'
   template_groups:
     - uuid: e0cecea5dc5d40948b41fd606a51d97b
-      name: CUSTOM
+      name: Komputertech
   templates:
     - uuid: 896064dc17e24d5882747852d2c830ca
       template: 'Zabbix version check'
@@ -12,7 +12,7 @@ zabbix_export:
                 
         The "Zabbix server version" item can be used to build a "History widget" that supports multiple servers and includes HTML-based color styling.
       groups:
-        - name: CUSTOM
+        - name: Komputertech
       items:
         - uuid: fbdf684863a344b885b0b02712cfca4e
           name: 'Zabbix server version check convert'
